@@ -31,6 +31,12 @@ class SubmitKey(BaseModel):
     name: str
     email: EmailStr 
 
+@app.get("/heathz")
+async def health_check():
+    return JSONResponse(
+        status_code=200,
+        content={"is_error": False, "message": "OK"},
+    )
 
 @app.post("/answer")
 async def ask_bot(req: AppRequest):
