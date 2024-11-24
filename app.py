@@ -44,7 +44,7 @@ async def ask_bot(req: AppRequest):
         logger.info(f"Processing prompt: {req.prompt}")
         answer = Model.answer(req.prompt)
         
-        if Config.WORD.lower() in f"{answer.lower()} Hackception".lower():
+        if Config.WORD.lower() in answer.lower():
             logger.info(f"Answer contains '{Config.WORD}', returning with key.")
             return JSONResponse(
                 status_code=200,
@@ -56,7 +56,7 @@ async def ask_bot(req: AppRequest):
                 },
             )
         else:
-            logger.info(f"Answer does not contain '{Config.WORD}', returning without key.")
+            logger.info(f"Answer does not contain 'fortan', returning without key.")
             return JSONResponse(
                 status_code=200,
                 content={
