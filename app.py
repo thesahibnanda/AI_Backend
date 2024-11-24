@@ -56,7 +56,7 @@ async def ask_bot(req: AppRequest):
                 },
             )
         else:
-            logger.info(f"Answer does not contain 'fortan', returning without key.")
+            logger.info(f"Answer does not contain '{Config.WORD}', returning without key.")
             return JSONResponse(
                 status_code=200,
                 content={
