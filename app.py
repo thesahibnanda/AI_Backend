@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel, EmailStr
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.requests import Request
+import time
 from models_groq import Model
 from send_mail import send_email
 from config import Config
@@ -30,6 +32,32 @@ class SubmitKey(BaseModel):
     key: str
     name: str
     email: EmailStr 
+    
+
+rate_limit_store = {}
+def rate_limiter(request: Request, limit: int, time_window: int):
+    client_ip = request.client.host
+    current_time = time.time()
+
+    if client_ip not in rate_limit_store:
+        rate_limit_store[client_ip] = []
+
+
+    rate_limit_store[client_ip] = [
+        timestamp for timestamp in rate_limit_store[client_ip] if current_time - timestamp < time_window
+    ]
+
+    if len(rate_limit_store[client_ip]) >= limit:
+        return JSONResponse(status_code=429, content={
+                    "is_error": False,
+                    "answer": "Rate limit exceeded, try again later",
+                    "got_key": False,
+                    "key_script": "",
+                })
+
+
+    rate_limit_store[client_ip].append(current_time)
+    return None
 
 @app.get("/heathz")
 async def health_check():
@@ -39,7 +67,10 @@ async def health_check():
     )
 
 @app.post("/answer")
-async def ask_bot(req: AppRequest):
+async def ask_bot(req: AppRequest, request: Request):
+    limiter = rate_limiter(request, 10, 60)
+    if limiter:
+        return limiter
     try:
         logger.info(f"Processing prompt: {req.prompt}")
         answer = Model.answer(req.prompt)
